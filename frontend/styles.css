@@ -174,7 +174,7 @@ html, body {
     width: 44px;
     height: 44px;
     border-radius: var(--radius-md);
-    background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+    background: #075985;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -332,9 +332,15 @@ html, body {
     font-weight: 600;
     padding: 4px 12px;
     border-radius: var(--radius-pill);
-    background: rgba(245, 158, 11, 0.12);
-    color: #d97706;
-    border: 1px solid rgba(245, 158, 11, 0.3);
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+}
+
+[data-theme="dark"] .hero-warning-pill {
+    background: #451a03;
+    color: #fef3c7;
+    border: 1px solid #92400e;
 }
 
 .header__title {
@@ -792,11 +798,24 @@ tbody td {
     width: 46px;
     height: 46px;
     border-radius: 50%;
-    background: rgba(239, 68, 68, 0.12);
-    color: #ef4444;
+    background: #fee2e2;
+    color: #991b1b;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+[data-theme="dark"] .empty-state__icon {
+    background: #450a0a;
+    color: #fecaca;
+}
+
+.control-label-spacer {
+    visibility: hidden;
+    font-size: 0.74rem;
+    line-height: 1.5;
+    height: 18px;
+    display: block;
 }
 
 /* -------------------------------------------------------------------

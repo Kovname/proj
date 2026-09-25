@@ -169,8 +169,40 @@ function LayersIcon() {
 }
 
 // ---------------------------------------------------------------------------
+// Halftone Wave Calculations (Refactored to reduce complexity & use Math.hypot)
+// ---------------------------------------------------------------------------
+
+function computeWaveIntensity(x, y, cx1, cy1, cx2, cy2, mx, my, mouseActive, t) {
+    const dist1 = Math.hypot(x - cx1, y - cy1);
+    const dist2 = Math.hypot(x - cx2, y - cy2);
+
+    const wave1 = Math.sin(dist1 * 0.022 - t * 3.5);
+    const wave2 = Math.sin(dist2 * 0.018 - t * 2.8) * 0.5;
+
+    let mouseWave = 0;
+    if (mouseActive) {
+        const mdist = Math.hypot(x - mx, y - my);
+        if (mdist < 260) {
+            mouseWave = Math.sin(mdist * 0.035 - t * 4.0) * (1 - mdist / 260) * 0.8;
+        }
+    }
+
+    const intensity = (wave1 + wave2 + mouseWave + 1.5) / 3.0;
+    return Math.min(Math.max(intensity, 0), 1);
+}
+
+function drawWaveDot(ctx, x, y, intensity, isDark) {
+    const radius = 0.9 + intensity * 2.3;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+
+    const alpha = isDark ? 0.05 + intensity * 0.22 : 0.04 + intensity * 0.20;
+    ctx.fillStyle = isDark ? `rgba(56, 189, 248, ${alpha})` : `rgba(14, 165, 233, ${alpha})`;
+    ctx.fill();
+}
+
+// ---------------------------------------------------------------------------
 // Calm Ambient Halftone Wave Canvas Background
-// Gentle, slow, eye-friendly, covering the whole viewport
 // ---------------------------------------------------------------------------
 
 function HalftoneCanvas({ theme }) {
@@ -213,10 +245,9 @@ function HalftoneCanvas({ theme }) {
         document.body.addEventListener('mouseleave', handleMouseLeave);
 
         let t = 0;
-        const step = 24; // spacious grid
+        const step = 24;
 
         const render = () => {
-            // Calm, slow-motion time increment
             t += 0.005;
             const width = window.innerWidth;
             const height = window.innerHeight;
@@ -224,11 +255,8 @@ function HalftoneCanvas({ theme }) {
             ctx.clearRect(0, 0, width, height);
 
             const isDark = theme === 'dark';
-
-            // Slow, majestic floating wave centers across full screen
             const cx1 = width * 0.35 + Math.sin(t * 1.2) * width * 0.28;
             const cy1 = height * 0.45 + Math.cos(t * 0.9) * height * 0.25;
-
             const cx2 = width * 0.70 + Math.cos(t * 1.0) * width * 0.25;
             const cy2 = height * 0.55 + Math.sin(t * 1.1) * height * 0.22;
 
@@ -238,49 +266,8 @@ function HalftoneCanvas({ theme }) {
 
             for (let x = 12; x < width + step; x += step) {
                 for (let y = 12; y < height + step; y += step) {
-                    const dx1 = x - cx1;
-                    const dy1 = y - cy1;
-                    const dist1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
-
-                    const dx2 = x - cx2;
-                    const dy2 = y - cy2;
-                    const dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
-
-                    // Smooth, gentle sine ripples
-                    const wave1 = Math.sin(dist1 * 0.022 - t * 3.5);
-                    const wave2 = Math.sin(dist2 * 0.018 - t * 2.8) * 0.5;
-
-                    let mouseWave = 0;
-                    if (mouseActive) {
-                        const mdx = x - mx;
-                        const mdy = y - my;
-                        const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
-                        if (mdist < 260) {
-                            mouseWave = Math.sin(mdist * 0.035 - t * 4.0) * (1 - mdist / 260) * 0.8;
-                        }
-                    }
-
-                    // Normalized gentle intensity (0 to 1)
-                    let intensity = (wave1 + wave2 + mouseWave + 1.5) / 3.0;
-                    if (intensity < 0) intensity = 0;
-                    if (intensity > 1) intensity = 1;
-
-                    // Subtle dot size (1.0px to 3.2px, never overpowering)
-                    const radius = 0.9 + intensity * 2.3;
-
-                    ctx.beginPath();
-                    ctx.arc(x, y, radius, 0, Math.PI * 2);
-
-                    if (isDark) {
-                        // Soft, non-glaring electric cyan in dark mode
-                        const alpha = 0.05 + intensity * 0.22;
-                        ctx.fillStyle = `rgba(56, 189, 248, ${alpha})`;
-                    } else {
-                        // Soft sky azure in light mode
-                        const alpha = 0.04 + intensity * 0.20;
-                        ctx.fillStyle = `rgba(14, 165, 233, ${alpha})`;
-                    }
-                    ctx.fill();
+                    const intensity = computeWaveIntensity(x, y, cx1, cy1, cx2, cy2, mx, my, mouseActive, t);
+                    drawWaveDot(ctx, x, y, intensity, isDark);
                 }
             }
 
@@ -304,7 +291,7 @@ function HalftoneCanvas({ theme }) {
 // Header Component
 // ---------------------------------------------------------------------------
 
-function Header({ mode, onToggleMode, theme, onToggleTheme, isMock, warning }) {
+function Header({ mode, onToggleMode, theme, onToggleTheme, warning }) {
     return (
         <header className="header">
             <div className="header__top">
@@ -322,7 +309,6 @@ function Header({ mode, onToggleMode, theme, onToggleTheme, isMock, warning }) {
                 </div>
 
                 <div className="header__actions">
-                    {/* Run Mode Switcher (Demo Dataset vs Live API) */}
                     <div className="mode-switcher" id="mode-switcher">
                         <button
                             type="button"
@@ -344,7 +330,6 @@ function Header({ mode, onToggleMode, theme, onToggleTheme, isMock, warning }) {
                         </button>
                     </div>
 
-                    {/* Dark/Light Theme Button */}
                     <button
                         className="theme-toggle"
                         onClick={onToggleTheme}
@@ -360,7 +345,7 @@ function Header({ mode, onToggleMode, theme, onToggleTheme, isMock, warning }) {
             <div className="header__hero">
                 <div className="hero-badge-row">
                     <span className="hero-status-pill">
-                        <span className="hero-status-dot"></span>
+                        <span className="hero-status-dot" />
                         <span>{mode === 'mock' ? 'DEMO ENVIRONMENT ACTIVE' : 'LIVE API INTEGRATION'}</span>
                     </span>
                     {warning && (
@@ -466,7 +451,7 @@ function Controls({
             </div>
 
             <div className="control-group control-group--action">
-                <label>&nbsp;</label>
+                <span className="control-label-spacer" aria-hidden="true">Action</span>
                 <button
                     className="btn-refresh"
                     onClick={onRefresh}
@@ -501,28 +486,28 @@ function StatsBar({ count, loading, mode }) {
 
             <div className="stats-bar__criteria" aria-label="Filtering criteria applied">
                 <span className="criteria-tag">
-                    <span className="criteria-tag__dot"></span>
-                    MCap &gt; 0
+                    <span className="criteria-tag__dot" />
+                    <span className="criteria-tag__name">MCap &gt; 0</span>
                 </span>
                 <span className="criteria-tag">
-                    <span className="criteria-tag__dot"></span>
-                    FDV &lt; $100M
+                    <span className="criteria-tag__dot" />
+                    <span className="criteria-tag__name">FDV &lt; $100M</span>
                 </span>
                 <span className="criteria-tag">
-                    <span className="criteria-tag__dot"></span>
-                    Vol &gt; $50K
+                    <span className="criteria-tag__dot" />
+                    <span className="criteria-tag__name">Vol &gt; $50K</span>
                 </span>
                 <span className="criteria-tag">
-                    <span className="criteria-tag__dot"></span>
-                    Supply Match
+                    <span className="criteria-tag__dot" />
+                    <span className="criteria-tag__name">Supply Match</span>
                 </span>
                 <span className="criteria-tag">
-                    <span className="criteria-tag__dot"></span>
-                    TVL &gt; $50K
+                    <span className="criteria-tag__dot" />
+                    <span className="criteria-tag__name">TVL &gt; $50K</span>
                 </span>
                 <span className="criteria-tag criteria-tag--preview">
                     <CheckCircleIcon />
-                    Preview Listing
+                    <span className="criteria-tag__name">Preview Listing</span>
                 </span>
             </div>
         </div>
@@ -623,7 +608,7 @@ function CoinTable({ coins, sortBy, sortOrder, onSort, loading }) {
         return (
             <div className="table-container">
                 <div className="loading-state">
-                    <div className="loading-spinner"></div>
+                    <div className="loading-spinner" />
                     <div className="loading-state__title">Synchronizing Coin Data</div>
                     <div className="loading-state__sub">Applying filters and querying API dataset…</div>
                 </div>
@@ -683,21 +668,18 @@ function App() {
     const [coins, setCoins] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [isMock, setIsMock] = useState(true);
     const [warning, setWarning] = useState(null);
 
-    // Mode state: 'mock' (instant demo) or 'live' (CoinGecko API)
     const [mode, setMode] = useState(() => {
         return localStorage.getItem('crypto_app_mode') || 'mock';
     });
 
-    // Theme state: 'dark' or 'light'
     const [theme, setTheme] = useState(() => {
         return localStorage.getItem('crypto_app_theme') || 'dark';
     });
 
     useEffect(() => {
-        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.dataset.theme = theme;
         localStorage.setItem('crypto_app_theme', theme);
     }, [theme]);
 
@@ -710,7 +692,6 @@ function App() {
         localStorage.setItem('crypto_app_mode', newMode);
     }, []);
 
-    // Filters
     const [search, setSearch] = useState('');
     const [maxFdv, setMaxFdv] = useState('');
     const [sortBy, setSortBy] = useState('');
@@ -736,7 +717,6 @@ function App() {
 
             const data = await resp.json();
             setCoins(data.data || []);
-            setIsMock(Boolean(data.is_mock));
             setWarning(data.warning || null);
         } catch (err) {
             console.error('Fetch error:', err);
@@ -774,7 +754,6 @@ function App() {
                     onToggleMode={handleToggleMode}
                     theme={theme}
                     onToggleTheme={toggleTheme}
-                    isMock={isMock}
                     warning={warning}
                 />
 

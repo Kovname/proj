@@ -550,8 +550,9 @@ async def refresh_cache(
     mode: Optional[str] = Query("live", description="Target refresh mode: 'live' or 'mock'")
 ):
     """Force-refresh the cache."""
-    logger.info("Manual cache refresh triggered for mode: %s", mode)
-    if mode == "mock":
+    target_mode = "mock" if mode == "mock" else "live"
+    logger.info("Manual cache refresh triggered for mode: %s", target_mode)
+    if target_mode == "mock":
         coins = _get_fallback_coins()
         _cache["data"] = coins
         _cache["timestamp"] = time.time()
