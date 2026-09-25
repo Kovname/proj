@@ -172,16 +172,16 @@ function LayersIcon() {
 // Halftone Wave Calculations (Refactored to reduce complexity & use Math.hypot)
 // ---------------------------------------------------------------------------
 
-function computeWaveIntensity(x, y, cx1, cy1, cx2, cy2, mx, my, mouseActive, t) {
-    const dist1 = Math.hypot(x - cx1, y - cy1);
-    const dist2 = Math.hypot(x - cx2, y - cy2);
+function computeWaveIntensity(x, y, centers, mouse, t) {
+    const dist1 = Math.hypot(x - centers.cx1, y - centers.cy1);
+    const dist2 = Math.hypot(x - centers.cx2, y - centers.cy2);
 
     const wave1 = Math.sin(dist1 * 0.022 - t * 3.5);
     const wave2 = Math.sin(dist2 * 0.018 - t * 2.8) * 0.5;
 
     let mouseWave = 0;
-    if (mouseActive) {
-        const mdist = Math.hypot(x - mx, y - my);
+    if (mouse.active) {
+        const mdist = Math.hypot(x - mouse.x, y - mouse.y);
         if (mdist < 260) {
             mouseWave = Math.sin(mdist * 0.035 - t * 4.0) * (1 - mdist / 260) * 0.8;
         }
@@ -255,18 +255,17 @@ function HalftoneCanvas({ theme }) {
             ctx.clearRect(0, 0, width, height);
 
             const isDark = theme === 'dark';
-            const cx1 = width * 0.35 + Math.sin(t * 1.2) * width * 0.28;
-            const cy1 = height * 0.45 + Math.cos(t * 0.9) * height * 0.25;
-            const cx2 = width * 0.70 + Math.cos(t * 1.0) * width * 0.25;
-            const cy2 = height * 0.55 + Math.sin(t * 1.1) * height * 0.22;
-
-            const mx = mouseRef.current.x;
-            const my = mouseRef.current.y;
-            const mouseActive = mouseRef.current.active;
+            const centers = {
+                cx1: width * 0.35 + Math.sin(t * 1.2) * width * 0.28,
+                cy1: height * 0.45 + Math.cos(t * 0.9) * height * 0.25,
+                cx2: width * 0.70 + Math.cos(t * 1.0) * width * 0.25,
+                cy2: height * 0.55 + Math.sin(t * 1.1) * height * 0.22,
+            };
+            const mouse = mouseRef.current;
 
             for (let x = 12; x < width + step; x += step) {
                 for (let y = 12; y < height + step; y += step) {
-                    const intensity = computeWaveIntensity(x, y, cx1, cy1, cx2, cy2, mx, my, mouseActive, t);
+                    const intensity = computeWaveIntensity(x, y, centers, mouse, t);
                     drawWaveDot(ctx, x, y, intensity, isDark);
                 }
             }
