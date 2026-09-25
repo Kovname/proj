@@ -125,7 +125,7 @@ Connects directly to the live CoinGecko API (`/coins/markets` and `/coins/{id}`)
 
 ### 2. How AI Was Used
 - **Architecture & System Design**: Designing an all-in-one FastAPI backend capable of handling both coin data filtering and static asset delivery.
-- **SonarCloud Remediation**: Automated scanning via `solar.py`, reading SonarCloud issues, refactoring Python cognitive complexity, adding SRI hashes, and eliminating CSS duplicate selectors.
+- **SonarCloud Remediation**: Automated scanning via SonarCloud REST API, reading code smells, refactoring Python cognitive complexity, adding SRI hashes, and eliminating CSS duplicate selectors.
 - **Halftone Wave Canvas Simulation**: Developing the 2D canvas trigonometric wave equations (`Math.sin` concentric ripples with mouse interaction) based on visual reference image.
 - **Code Generation & Refactoring**: Generating typed FastAPI schemas, query parameter handlers, React state management, and CSS custom properties.
 
@@ -155,9 +155,6 @@ proj/
 │   ├── index.html           # HTML5 entry with SRI hashes & Google Fonts
 │   ├── app.jsx              # React 18 application & Halftone Wave Canvas
 │   └── styles.css           # Apple high-tech design system (Dark & Light themes)
-├── .env                     # Local secrets (gitignored)
 ├── .gitignore               # Git ignore rules
-├── solar.py                 # SonarCloud API automated checklist generator
-├── sonar_tasks_for_agent.md # SonarCloud task tracking (0 remaining)
 └── README.md                # Project documentation & submission report
 ```

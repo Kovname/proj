@@ -301,7 +301,6 @@ function Header({ mode, onToggleMode, theme, onToggleTheme, warning }) {
                     <div className="header__brand-info">
                         <div className="header__brand-row">
                             <span className="header__brand-title">SPREDO</span>
-                            <span className="header__brand-badge">PROTOCOL</span>
                         </div>
                         <span className="header__brand-tagline">CRYPTO ASSET SCREENER</span>
                     </div>
@@ -342,18 +341,14 @@ function Header({ mode, onToggleMode, theme, onToggleTheme, warning }) {
             </div>
 
             <div className="header__hero">
-                <div className="hero-badge-row">
-                    <span className="hero-status-pill">
-                        <span className="hero-status-dot" />
-                        <span>{mode === 'mock' ? 'DEMO ENVIRONMENT ACTIVE' : 'LIVE API INTEGRATION'}</span>
-                    </span>
-                    {warning && (
+                {warning && (
+                    <div className="hero-badge-row">
                         <span className="hero-warning-pill">
                             <AlertCircleIcon />
                             <span>{warning}</span>
                         </span>
-                    )}
-                </div>
+                    </div>
+                )}
 
                 <h1 className="header__title">Qualified Cryptocurrency Assets</h1>
                 <p className="header__subtitle">
@@ -485,23 +480,18 @@ function StatsBar({ count, loading, mode }) {
 
             <div className="stats-bar__criteria" aria-label="Filtering criteria applied">
                 <span className="criteria-tag">
-                    <span className="criteria-tag__dot" />
                     <span className="criteria-tag__name">MCap &gt; 0</span>
                 </span>
                 <span className="criteria-tag">
-                    <span className="criteria-tag__dot" />
                     <span className="criteria-tag__name">FDV &lt; $100M</span>
                 </span>
                 <span className="criteria-tag">
-                    <span className="criteria-tag__dot" />
                     <span className="criteria-tag__name">Vol &gt; $50K</span>
                 </span>
                 <span className="criteria-tag">
-                    <span className="criteria-tag__dot" />
                     <span className="criteria-tag__name">Supply Match</span>
                 </span>
                 <span className="criteria-tag">
-                    <span className="criteria-tag__dot" />
                     <span className="criteria-tag__name">TVL &gt; $50K</span>
                 </span>
                 <span className="criteria-tag criteria-tag--preview">

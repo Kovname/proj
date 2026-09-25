@@ -202,17 +202,6 @@ html, body {
     color: var(--text-primary);
 }
 
-.header__brand-badge {
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 0.10em;
-    padding: 2px 7px;
-    border-radius: var(--radius-pill);
-    background: var(--badge-bg);
-    color: var(--badge-text);
-    border: 1px solid var(--badge-border);
-}
-
 .header__brand-tagline {
     font-size: 0.68rem;
     font-weight: 600;
@@ -300,28 +289,6 @@ html, body {
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
-}
-
-.hero-status-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    font-size: 0.70rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    padding: 4px 10px;
-    border-radius: var(--radius-pill);
-    background: var(--badge-bg);
-    color: var(--badge-text);
-    border: 1px solid var(--badge-border);
-}
-
-.hero-status-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background-color: var(--accent-primary);
-    box-shadow: 0 0 6px var(--accent-primary);
 }
 
 .hero-warning-pill {
@@ -543,14 +510,6 @@ html, body {
     color: var(--chip-text);
     backdrop-filter: blur(16px);
     transition: var(--transition-fast);
-}
-
-.criteria-tag__dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background-color: var(--chip-dot);
-    box-shadow: 0 0 5px var(--chip-dot);
 }
 
 .criteria-tag--preview {

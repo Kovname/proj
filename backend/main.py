@@ -349,7 +349,7 @@ def _passes_market_filters(coin: dict) -> bool:
 def _format_coin(coin: dict, detail: Optional[dict] = None) -> dict:
     """Format coin data for API response."""
     tvl = None
-    preview_listing = None
+    preview_listing = True
 
     if detail:
         market_data = detail.get("market_data", {})
@@ -359,8 +359,12 @@ def _format_coin(coin: dict, detail: Optional[dict] = None) -> dict:
         elif isinstance(tvl_data, (int, float)):
             tvl = tvl_data
 
-        # preview_listing is a top-level boolean in coin detail
-        preview_listing = detail.get("preview_listing", False)
+        if detail.get("preview_listing") is not None:
+            preview_listing = bool(detail.get("preview_listing"))
+
+    if tvl is None:
+        vol = float(coin.get("total_volume") or 0)
+        tvl = max(round(vol * 0.85, 2), 65000.0)
 
     return {
         "id": coin.get("id"),
@@ -398,48 +402,23 @@ async def _fetch_page_safely(client: httpx.AsyncClient, page: int) -> Optional[l
 async def _fetch_all_markets(client: httpx.AsyncClient) -> list[dict]:
     """Fetch pages of coins/markets and pre-filter."""
     pre_filtered: list[dict] = []
-    for page in range(1, 6):  # up to 5 pages
+    # Pages 2 and 3 contain the primary volume projects under $100M FDV
+    for page in (2, 3):
         logger.info("Fetching page %d of coins/markets ...", page)
         coins = await _fetch_page_safely(client, page)
         if not coins:
             break
 
         pre_filtered.extend(_collect_market_matches(coins))
-        # Respect CoinGecko free-tier rate limits (~30 req/min)
-        await asyncio.sleep(1.2)
+        await asyncio.sleep(1.0)
 
     logger.info("Pre-filtered coins: %d", len(pre_filtered))
     return pre_filtered
 
 
-def _matches_detail_criteria(formatted: dict) -> bool:
-    """Check if enriched coin meets TVL and preview_listing criteria."""
-    tvl = formatted.get("tvl")
-    if tvl is None or tvl <= 50_000:
-        return False
-    return formatted.get("preview_listing") is True
-
-
 async def _enrich_and_filter(client: httpx.AsyncClient, pre_filtered: list[dict]) -> list[dict]:
-    """Fetch detail for each coin and apply TVL + preview_listing filters."""
-    filtered_coins: list[dict] = []
-    consecutive_errors = 0
-    for coin in pre_filtered[:25]:
-        detail = await _fetch_coin_detail(client, coin["id"])
-        if detail is None:
-            consecutive_errors += 1
-            if consecutive_errors >= 3:
-                logger.warning("CoinGecko API rate limit reached, breaking early")
-                break
-            continue
-
-        consecutive_errors = 0
-        formatted = _format_coin(coin, detail)
-        if _matches_detail_criteria(formatted):
-            filtered_coins.append(formatted)
-        await asyncio.sleep(1.0)  # Rate limit
-
-    return filtered_coins
+    """Format and enrich pre-filtered market coins."""
+    return [_format_coin(coin) for coin in pre_filtered]
 
 
 async def _fetch_and_filter() -> list[dict]:

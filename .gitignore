@@ -9,3 +9,6 @@ build/
 .idea/
 .vscode/
 node_modules/
+solar.py
+sonar_tasks_for_agent.md
+.scannerwork/
