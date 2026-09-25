@@ -416,7 +416,7 @@ async def _fetch_all_markets(client: httpx.AsyncClient) -> list[dict]:
     return pre_filtered
 
 
-async def _enrich_and_filter(client: httpx.AsyncClient, pre_filtered: list[dict]) -> list[dict]:
+def _enrich_and_filter(pre_filtered: list[dict]) -> list[dict]:
     """Format and enrich pre-filtered market coins."""
     return [_format_coin(coin) for coin in pre_filtered]
 
@@ -426,13 +426,11 @@ async def _fetch_and_filter() -> list[dict]:
     Main pipeline:
     1. Fetch coins from /coins/markets (multiple pages).
     2. Apply market-data filters (mcap, FDV, volume, supply match).
-    3. Fetch detail for surviving coins to get TVL & preview_listing.
-    4. Apply TVL > $50k filter.
-    5. Apply preview_listing == true filter.
+    3. Format and enrich pre-filtered market coins.
     """
     async with httpx.AsyncClient() as client:
         pre_filtered = await _fetch_all_markets(client)
-        return await _enrich_and_filter(client, pre_filtered)
+        return _enrich_and_filter(pre_filtered)
 
 
 # ---------------------------------------------------------------------------
