@@ -342,6 +342,7 @@ thead th .sort-icon {
 tbody tr {
     transition: background-color var(--transition-fast);
     border-bottom: 1px solid rgba(148, 163, 184, 0.05);
+    animation: fadeInUp 0.3s ease forwards;
 }
 
 tbody tr:hover {
@@ -581,9 +582,6 @@ tbody td {
     }
 }
 
-tbody tr {
-    animation: fadeInUp 0.3s ease forwards;
-}
 
 tbody tr:nth-child(1) { animation-delay: 0.02s; }
 tbody tr:nth-child(2) { animation-delay: 0.04s; }

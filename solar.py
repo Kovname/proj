@@ -1,10 +1,20 @@
+import os
+from pathlib import Path
 import requests
 
-# 1. Твой токен из SonarCloud
-SONAR_TOKEN = '4504fee76120d32b86b2d44a7bcfff22e86e4ef6'
+# 1. Токен из переменной окружения или .env
+SONAR_TOKEN = os.getenv('SONAR_TOKEN')
+if not SONAR_TOKEN:
+    env_file = Path(__file__).resolve().parent / '.env'
+    if env_file.exists():
+        with open(env_file, 'r', encoding='utf-8-sig') as f:
+            for line in f:
+                if line.startswith('SONAR_TOKEN='):
+                    SONAR_TOKEN = line.strip().split('=', 1)[1].strip(' "\'')
+                    break
 
 # 2. Ключ твоего проекта
-PROJECT_KEY = 'Kovname_proj' 
+PROJECT_KEY = os.getenv('SONAR_PROJECT_KEY', 'Kovname_proj') 
 
 url = "https://sonarcloud.io/api/issues/search"
 params = {

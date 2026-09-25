@@ -121,7 +121,10 @@ function StatsBar({ count, loading }) {
 
 function SortableHeader({ label, field, currentSort, currentOrder, onSort }) {
     const isSorted = currentSort === field;
-    const icon = isSorted ? (currentOrder === 'asc' ? '↑' : '↓') : '↕';
+    let icon = '↕';
+    if (isSorted) {
+        icon = currentOrder === 'asc' ? '↑' : '↓';
+    }
 
     return (
         <th
@@ -135,9 +138,10 @@ function SortableHeader({ label, field, currentSort, currentOrder, onSort }) {
 }
 
 function CoinRow({ coin, index }) {
-    const priceChangeClass = coin.price_change_percentage_24h != null
-        ? (coin.price_change_percentage_24h >= 0 ? 'value-positive' : 'value-negative')
-        : 'value-neutral';
+    let priceChangeClass = 'value-neutral';
+    if (coin.price_change_percentage_24h != null) {
+        priceChangeClass = coin.price_change_percentage_24h >= 0 ? 'value-positive' : 'value-negative';
+    }
 
     return (
         <tr style={{ animationDelay: `${Math.min(index * 0.02, 0.2)}s` }}>

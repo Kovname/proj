@@ -197,6 +197,58 @@ def _format_coin(coin: dict, detail: Optional[dict] = None) -> dict:
     }
 
 
+def _collect_market_matches(coins: list[dict]) -> list[dict]:
+    """Return only coins that pass market-level criteria."""
+    return [c for c in coins if _passes_market_filters(c)]
+
+
+async def _fetch_page_safely(client: httpx.AsyncClient, page: int) -> Optional[list[dict]]:
+    """Fetch one page of coin market data with error handling."""
+    try:
+        return await _fetch_coins_markets(client, page=page)
+    except (httpx.HTTPStatusError, httpx.RequestError) as exc:
+        logger.warning("Error on page %d: %s", page, exc)
+        return None
+
+
+async def _fetch_all_markets(client: httpx.AsyncClient) -> list[dict]:
+    """Fetch multiple pages of coins/markets and pre-filter."""
+    pre_filtered: list[dict] = []
+    for page in range(1, 21):  # up to 20 pages (5000 coins)
+        logger.info("Fetching page %d of coins/markets ...", page)
+        coins = await _fetch_page_safely(client, page)
+        if not coins:
+            break
+
+        pre_filtered.extend(_collect_market_matches(coins))
+        # Respect CoinGecko free-tier rate limits (~30 req/min)
+        await asyncio.sleep(1.5)
+
+    logger.info("Pre-filtered coins: %d", len(pre_filtered))
+    return pre_filtered
+
+
+def _matches_detail_criteria(formatted: dict) -> bool:
+    """Check if enriched coin meets TVL and preview_listing criteria."""
+    tvl = formatted.get("tvl")
+    if tvl is None or tvl <= 50_000:
+        return False
+    return formatted.get("preview_listing") is True
+
+
+async def _enrich_and_filter(client: httpx.AsyncClient, pre_filtered: list[dict]) -> list[dict]:
+    """Fetch detail for each coin and apply TVL + preview_listing filters."""
+    filtered_coins: list[dict] = []
+    for coin in pre_filtered:
+        detail = await _fetch_coin_detail(client, coin["id"])
+        formatted = _format_coin(coin, detail)
+        if _matches_detail_criteria(formatted):
+            filtered_coins.append(formatted)
+        await asyncio.sleep(1.2)  # Rate limit
+
+    return filtered_coins
+
+
 async def _fetch_and_filter() -> list[dict]:
     """
     Main pipeline:
@@ -206,55 +258,9 @@ async def _fetch_and_filter() -> list[dict]:
     4. Apply TVL > $50k filter.
     5. Apply preview_listing == true filter.
     """
-    filtered_coins: list[dict] = []
-
     async with httpx.AsyncClient() as client:
-        # Step 1 & 2: Fetch pages and pre-filter
-        pre_filtered: list[dict] = []
-        for page in range(1, 21):  # up to 20 pages (5000 coins)
-            logger.info("Fetching page %d of coins/markets ...", page)
-            try:
-                coins = await _fetch_coins_markets(client, page=page)
-            except httpx.HTTPStatusError as exc:
-                logger.warning("API error on page %d: %s", page, exc)
-                break
-            except httpx.RequestError as exc:
-                logger.warning("Request error on page %d: %s", page, exc)
-                break
-
-            if not coins:
-                break
-
-            for coin in coins:
-                if _passes_market_filters(coin):
-                    pre_filtered.append(coin)
-
-            # Respect CoinGecko free-tier rate limits (~30 req/min)
-            await asyncio.sleep(1.5)
-
-        logger.info("Pre-filtered coins: %d", len(pre_filtered))
-
-        # Step 3: Fetch detail for each pre-filtered coin
-        for coin in pre_filtered:
-            detail = await _fetch_coin_detail(client, coin["id"])
-
-            formatted = _format_coin(coin, detail)
-
-            # Step 4: TVL > $50k
-            tvl = formatted.get("tvl")
-            if tvl is None or tvl <= 50_000:
-                continue
-
-            # Step 5: preview_listing == true
-            if formatted.get("preview_listing") is not True:
-                continue
-
-            filtered_coins.append(formatted)
-
-            # Rate limit
-            await asyncio.sleep(1.2)
-
-    return filtered_coins
+        pre_filtered = await _fetch_all_markets(client)
+        return await _enrich_and_filter(client, pre_filtered)
 
 
 # ---------------------------------------------------------------------------
@@ -267,7 +273,7 @@ async def health_check():
     return {"status": "ok", "service": "Crypto Filter API"}
 
 
-@app.get("/api/coins")
+@app.get("/api/coins", responses={502: {"description": "Failed to fetch data from CoinGecko"}})
 async def get_filtered_coins(
     search: Optional[str] = Query(None, description="Search by project name (partial match)"),
     max_fdv: Optional[float] = Query(None, description="Maximum FDV filter (USD)"),
@@ -295,7 +301,7 @@ async def get_filtered_coins(
             _cache["timestamp"] = time.time()
             logger.info("Fetched and cached %d coins", len(coins))
         except Exception as exc:
-            logger.error("Failed to fetch data: %s", exc)
+            logger.exception("Failed to fetch data")
             raise HTTPException(status_code=502, detail="Failed to fetch data from CoinGecko") from exc
 
     # --- Additional frontend-driven filters ---
@@ -325,7 +331,7 @@ async def get_filtered_coins(
     }
 
 
-@app.get("/api/coins/refresh")
+@app.get("/api/coins/refresh", responses={502: {"description": "Failed to refresh data"}})
 async def refresh_cache():
     """Force-refresh the cache."""
     logger.info("Manual cache refresh triggered")
@@ -335,7 +341,7 @@ async def refresh_cache():
         _cache["timestamp"] = time.time()
         return {"status": "ok", "count": len(coins)}
     except Exception as exc:
-        logger.error("Refresh failed: %s", exc)
+        logger.exception("Refresh failed")
         raise HTTPException(status_code=502, detail="Failed to refresh data") from exc
 
 
